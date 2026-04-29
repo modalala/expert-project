@@ -39,3 +39,6 @@ mysql-data/
 # Package lock (root level only - keep project level)
 /package-lock.json
 /package.json
+
+# Docker volumes (local)
+mysql_data/

@@ -1,0 +1,77 @@
+# 专家库管理系统 - Docker Compose配置
+
+version: '3.8'
+
+services:
+  # MySQL数据库
+  mysql:
+    image: mysql:8.0
+    container_name: expert-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: expert_db
+      MYSQL_USER: expert
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    networks:
+      - expert-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 后端服务
+  backend:
+    build:
+      context: ./expert-backend
+      dockerfile: Dockerfile
+    container_name: expert-backend
+    restart: always
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: expert_db
+      DB_USER: expert
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - expert-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/test/db-conn"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 前端服务 (Nginx)
+  frontend:
+    build:
+      context: ./expert-frontend
+      dockerfile: Dockerfile
+    container_name: expert-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - expert-network
+
+networks:
+  expert-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
