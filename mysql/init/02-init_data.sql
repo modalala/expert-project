@@ -11,7 +11,7 @@ USE expert_db;
 -- 密码: Admin@123 (BCrypt加密)
 -- =============================================
 INSERT INTO sys_user (id, username, password, real_name, phone, email, status, create_time) VALUES
-(1, 'admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '系统管理员', '13800000000', 'admin@example.com', 1, NOW());
+(1, 'admin', '$2a$10$ojSkUJVK9wevzMbI7mHcU.fhwWl77MLTxLfqJB.X/03cz3bOBY/GO', '系统管理员', '13800000000', 'admin@example.com', 1, NOW());
 
 -- =============================================
 -- 2. 初始化角色
