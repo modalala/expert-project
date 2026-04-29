@@ -23,4 +23,4 @@ EXPOSE 8080
 ENV JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC"
 
 # 启动命令
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar --spring.config.location=application-prod.yml"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar --spring.profiles.active=prod"]
