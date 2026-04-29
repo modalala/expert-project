@@ -1,7 +1,7 @@
 # 前端Dockerfile - 多阶段构建
 
 # 第一阶段: 构建
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /build
 
