@@ -152,7 +152,7 @@ const getStatusType = (status: string) => {
 const loadPlanList = async () => {
   loading.value = true
   try {
-    const res = await api.get(`/plan/list?page=${page.value}&size=${size.value}`)
+    const res: any = await api.get(`/plan/list?page=${page.value}&size=${size.value}`)
     if (res.code === 200) {
       planList.value = res.data.records
       total.value = res.data.total
@@ -187,14 +187,14 @@ const submitPlan = async () => {
 
   try {
     if (isEdit.value && currentPlanId.value) {
-      const res = await api.put(`/plan/${currentPlanId.value}`, planForm)
+      const res: any = await api.put(`/plan/${currentPlanId.value}`, planForm)
       if (res.code === 200) {
         ElMessage.success('更新成功')
         dialogVisible.value = false
         loadPlanList()
       }
     } else {
-      const res = await api.post('/plan', planForm)
+      const res: any = await api.post('/plan', planForm)
       if (res.code === 200) {
         ElMessage.success('创建成功')
         dialogVisible.value = false

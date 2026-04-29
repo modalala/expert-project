@@ -127,7 +127,7 @@ const itemForm = ref({ dictCode: '', itemCode: '', itemName: '', sortOrder: 0 })
 const loadDictList = async () => {
   loading.value = true
   try {
-    const res = await api.get('/dict/list')
+    const res: any = await api.get('/dict/list')
     if (res.code === 200) {
       dictList.value = res.data.records
     }
@@ -143,7 +143,7 @@ const showAddDict = () => {
 
 const createDict = async () => {
   try {
-    const res = await api.post('/dict', dictForm.value)
+    const res: any = await api.post('/dict', dictForm.value)
     if (res.code === 200) {
       ElMessage.success('字典创建成功')
       addDictVisible.value = false
@@ -159,7 +159,7 @@ const createDict = async () => {
 const deleteDict = async (row: Dict) => {
   await ElMessageBox.confirm('确定删除该字典及其所有字典项？', '提示')
   try {
-    const res = await api.delete(`/dict/${row.id}`)
+    const res: any = await api.delete(`/dict/${row.id}`)
     if (res.code === 200) {
       ElMessage.success('字典已删除')
       loadDictList()
@@ -174,7 +174,7 @@ const showDictItems = async (row: Dict) => {
   itemsVisible.value = true
   itemsLoading.value = true
   try {
-    const res = await api.get(`/dict/${row.dictCode}/items`)
+    const res: any = await api.get(`/dict/${row.dictCode}/items`)
     if (res.code === 200) {
       itemList.value = res.data
     }
@@ -190,7 +190,7 @@ const showAddItem = () => {
 
 const createItem = async () => {
   try {
-    const res = await api.post('/dict/item', itemForm.value)
+    const res: any = await api.post('/dict/item', itemForm.value)
     if (res.code === 200) {
       ElMessage.success('字典项创建成功')
       addItemVisible.value = false
@@ -206,7 +206,7 @@ const createItem = async () => {
 const deleteItem = async (row: DictItem) => {
   await ElMessageBox.confirm('确定删除该字典项？', '提示')
   try {
-    const res = await api.delete(`/dict/item/${row.id}`)
+    const res: any = await api.delete(`/dict/item/${row.id}`)
     if (res.code === 200) {
       ElMessage.success('字典项已删除')
       showDictItems(currentDict.value!)

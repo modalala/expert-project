@@ -135,14 +135,14 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { userApi, roleApi } from '@/api'
 
 const loading = ref(false)
-const tableData = ref([])
+const tableData = ref<any[]>([])
 const formDialogVisible = ref(false)
 const roleDialogVisible = ref(false)
 const passwordDialogVisible = ref(false)
 const isEdit = ref(false)
 const currentUserId = ref(0)
-const roleList = ref([])
-const selectedRoles = ref([])
+const roleList = ref<any[]>([])
+const selectedRoles = ref<number[]>([])
 const formRef = ref<FormInstance>()
 const passwordRef = ref<FormInstance>()
 

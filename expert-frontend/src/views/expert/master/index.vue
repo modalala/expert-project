@@ -268,7 +268,7 @@ const loadExperts = async () => {
     if (queryForm.value.expertLevel) params.append('expertLevel', queryForm.value.expertLevel)
     if (queryForm.value.status) params.append('status', queryForm.value.status)
 
-    const res = await api.get(`/expert/list?${params}`)
+    const res: any = await api.get(`/expert/list?${params}`)
     if (res.code === 200) {
       expertList.value = res.data.records
       total.value = res.data.total
@@ -297,7 +297,7 @@ const showEdit = (row: Expert) => {
 
 const saveEdit = async () => {
   try {
-    const res = await api.put(`/expert/${editForm.value.id}`, editForm.value)
+    const res: any = await api.put(`/expert/${editForm.value.id}`, editForm.value)
     if (res.code === 200) {
       ElMessage.success('专家信息已更新')
       editVisible.value = false
@@ -310,7 +310,7 @@ const saveEdit = async () => {
 
 const showPortrait = async (row: Expert) => {
   try {
-    const res = await api.get(`/expert/${row.id}/portrait`)
+    const res: any = await api.get(`/expert/${row.id}/portrait`)
     if (res.code === 200) {
       portrait.value = res.data
       portraitVisible.value = true

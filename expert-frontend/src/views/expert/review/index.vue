@@ -216,7 +216,7 @@ const loadReviewList = async () => {
     if (queryForm.value.name) params.append('name', queryForm.value.name)
     if (queryForm.value.expertType) params.append('expertType', queryForm.value.expertType)
 
-    const res = await api.get(`/review/list?${params}`)
+    const res: any = await api.get(`/review/list?${params}`)
     if (res.code === 200) {
       reviewList.value = res.data.records
       total.value = res.data.total
@@ -235,7 +235,7 @@ const resetQuery = () => {
 
 const showDetail = async (row: ReviewItem) => {
   try {
-    const res = await api.get(`/review/${row.expertId}`)
+    const res: any = await api.get(`/review/${row.expertId}`)
     if (res.code === 200) {
       currentExpert.value = res.data
       currentReviewItem.value = row
@@ -261,7 +261,7 @@ const submitPass = async () => {
   if (!currentReviewItem.value) return
 
   try {
-    const res = await api.post(`/review/${currentReviewItem.value.expertId}/pass`, passForm.value)
+    const res: any = await api.post(`/review/${currentReviewItem.value.expertId}/pass`, passForm.value)
     if (res.code === 200) {
       ElMessage.success('审核通过成功')
       passVisible.value = false
@@ -294,7 +294,7 @@ const submitReject = async () => {
   }
 
   try {
-    const res = await api.post(`/review/${currentReviewItem.value.expertId}/reject`, rejectForm.value)
+    const res: any = await api.post(`/review/${currentReviewItem.value.expertId}/reject`, rejectForm.value)
     if (res.code === 200) {
       ElMessage.success('审核拒绝成功')
       rejectVisible.value = false

@@ -117,7 +117,7 @@ const isExpired = (expireTime: string) => {
 
 const loadPlanList = async () => {
   try {
-    const res = await api.get('/plan/list')
+    const res: any = await api.get('/plan/list')
     if (res.code === 200 && res.data.records.length > 0) {
       planList.value = res.data.records
       selectedPlanId.value = planList.value[0].id
@@ -132,7 +132,7 @@ const loadConfirmList = async () => {
   if (!selectedPlanId.value) return
   loading.value = true
   try {
-    const res = await api.get(`/extraction/confirm/list/${selectedPlanId.value}`)
+    const res: any = await api.get(`/extraction/confirm/list/${selectedPlanId.value}`)
     if (res.code === 200) {
       confirmList.value = res.data.map((item: any) => ({
         id: item.id,
@@ -155,7 +155,7 @@ const loadConfirmList = async () => {
 
 const handleConfirm = async (row: ConfirmItem) => {
   try {
-    const res = await api.post(`/extraction/confirm/${row.id}/accept`)
+    const res: any = await api.post(`/extraction/confirm/${row.id}/accept`)
     if (res.code === 200) {
       ElMessage.success('确认成功')
       loadConfirmList()
@@ -175,7 +175,7 @@ const handleReject = (row: ConfirmItem) => {
 const submitReject = async () => {
   if (!currentConfirmId.value) return
   try {
-    const res = await api.post(`/extraction/confirm/${currentConfirmId.value}/reject`, rejectForm)
+    const res: any = await api.post(`/extraction/confirm/${currentConfirmId.value}/reject`, rejectForm)
     if (res.code === 200) {
       ElMessage.success('拒绝成功')
       rejectVisible.value = false
@@ -188,7 +188,7 @@ const submitReject = async () => {
 
 const handleTimeout = async (row: ConfirmItem) => {
   try {
-    const res = await api.post(`/extraction/confirm/${row.id}/timeout`)
+    const res: any = await api.post(`/extraction/confirm/${row.id}/timeout`)
     if (res.code === 200) {
       ElMessage.success('已标记超时')
       loadConfirmList()

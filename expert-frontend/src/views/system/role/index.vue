@@ -124,7 +124,7 @@ const checkedPermissions = ref<number[]>([])
 const loadRoleList = async () => {
   loading.value = true
   try {
-    const res = await api.get('/role/list')
+    const res: any = await api.get('/role/list')
     if (res.code === 200) {
       roleList.value = res.data
     }
@@ -137,25 +137,25 @@ const loadRoleList = async () => {
 
 const loadPermissions = async () => {
   permissionTreeData.value = [
-    { id: 1, permName: '系统管理', children: [
-      { id: 11, permName: '用户管理' },
-      { id: 12, permName: '角色管理' },
-      { id: 13, permName: '权限管理' }
+    { id: 1, permCode: 'system', permName: '系统管理', permType: 1, parentId: 0, path: '/system', children: [
+      { id: 11, permCode: 'system:user', permName: '用户管理', permType: 2, parentId: 1, path: '/system/user' },
+      { id: 12, permCode: 'system:role', permName: '角色管理', permType: 2, parentId: 1, path: '/system/role' },
+      { id: 13, permCode: 'system:perm', permName: '权限管理', permType: 2, parentId: 1, path: '/system/permission' }
     ]},
-    { id: 2, permName: '专家管理', children: [
-      { id: 21, permName: '专家注册' },
-      { id: 22, permName: '专家初审' },
-      { id: 23, permName: '专家复审' },
-      { id: 24, permName: '专家主数据' }
+    { id: 2, permCode: 'expert', permName: '专家管理', permType: 1, parentId: 0, path: '/expert', children: [
+      { id: 21, permCode: 'expert:register', permName: '专家注册', permType: 2, parentId: 2, path: '/expert/register' },
+      { id: 22, permCode: 'expert:review', permName: '专家初审', permType: 2, parentId: 2, path: '/expert/review' },
+      { id: 23, permCode: 'expert:review2', permName: '专家复审', permType: 2, parentId: 2, path: '/expert/review2' },
+      { id: 24, permCode: 'expert:master', permName: '专家主数据', permType: 2, parentId: 2, path: '/expert/master' }
     ]},
-    { id: 3, permName: '抽取管理', children: [
-      { id: 31, permName: '采购方案单' },
-      { id: 32, permName: '抽取方案配置' },
-      { id: 33, permName: '专家确认' }
+    { id: 3, permCode: 'extraction', permName: '抽取管理', permType: 1, parentId: 0, path: '/extraction', children: [
+      { id: 31, permCode: 'extraction:plan', permName: '采购方案单', permType: 2, parentId: 3, path: '/extraction/plan' },
+      { id: 32, permCode: 'extraction:config', permName: '抽取方案配置', permType: 2, parentId: 3, path: '/extraction/config' },
+      { id: 33, permCode: 'extraction:confirm', permName: '专家确认', permType: 2, parentId: 3, path: '/extraction/confirm' }
     ]},
-    { id: 4, permName: '评标管理', children: [
-      { id: 41, permName: '评标委员会' },
-      { id: 42, permName: '专家评分' }
+    { id: 4, permCode: 'bid', permName: '评标管理', permType: 1, parentId: 0, path: '/bid', children: [
+      { id: 41, permCode: 'bid:committee', permName: '评标委员会', permType: 2, parentId: 4, path: '/bid/committee' },
+      { id: 42, permCode: 'bid:score', permName: '专家评分', permType: 2, parentId: 4, path: '/bid/score' }
     ]}
   ]
 }
@@ -180,14 +180,14 @@ const submitRole = async () => {
 
   try {
     if (isEdit.value && currentRoleId.value) {
-      const res = await api.put(`/role/${currentRoleId.value}`, roleForm)
+      const res: any = await api.put(`/role/${currentRoleId.value}`, roleForm)
       if (res.code === 200) {
         ElMessage.success('更新成功')
         dialogVisible.value = false
         loadRoleList()
       }
     } else {
-      const res = await api.post('/role', roleForm)
+      const res: any = await api.post('/role', roleForm)
       if (res.code === 200) {
         ElMessage.success('创建成功')
         dialogVisible.value = false

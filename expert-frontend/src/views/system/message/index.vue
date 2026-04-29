@@ -115,7 +115,7 @@ const getTypeLabel = (type: string) => {
 const loadTemplates = async () => {
   loading.value = true
   try {
-    const res = await api.get('/message/template/list')
+    const res: any = await api.get('/message/template/list')
     if (res.code === 200) {
       templateList.value = res.data.records
     }
@@ -131,7 +131,7 @@ const showAddTemplate = () => {
 
 const createTemplate = async () => {
   try {
-    const res = await api.post('/message/template', templateForm.value)
+    const res: any = await api.post('/message/template', templateForm.value)
     if (res.code === 200) {
       ElMessage.success('模板创建成功')
       addTemplateVisible.value = false
@@ -165,7 +165,7 @@ const testSend = (row: Template) => {
 
 const sendTestMessage = async () => {
   try {
-    const res = await api.post('/message/wechat/send', {
+    const res: any = await api.post('/message/wechat/send', {
       templateCode: currentTemplate.value?.templateCode,
       receiver: testForm.value.receiver,
       params: testParams.value
