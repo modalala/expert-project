@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+expert-frontend/node_modules/
+
+# Build outputs
+expert-backend/target/
+expert-frontend/dist/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Temp files
+temp/
+*.tmp
+*.temp
+
+# Claude Code
+.claude/
+.agents/
+
+# MySQL data (if local)
+mysql-data/
+
+# Package lock (root level only - keep project level)
+/package-lock.json
+/package.json

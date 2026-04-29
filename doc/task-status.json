@@ -1,0 +1,147 @@
+{
+  "project": "专家库管理系统",
+  "lastUpdate": "2026-04-29T20:20:00",
+  "summary": {
+    "total": 30,
+    "completed": 30,
+    "pending": 0,
+    "blocked": 0,
+    "available": 0,
+    "completionRate": "100%"
+  },
+  "completedTasks": [
+    { "id": "task-01", "name": "后端项目初始化", "taskId": "#10", "completedAt": "2026-04-29T18:00:00" },
+    { "id": "task-02", "name": "数据库表结构创建", "taskId": "#3", "completedAt": "2026-04-29T18:10:00" },
+    { "id": "task-03", "name": "前端项目初始化", "taskId": "#11", "completedAt": "2026-04-29T18:20:00" },
+    { "id": "task-04", "name": "用户登录功能", "taskId": "#12", "completedAt": "2026-04-29T18:30:00" },
+    { "id": "task-05", "name": "用户管理CRUD", "taskId": "#7", "completedAt": "2026-04-29T18:52:00" },
+    { "id": "task-06", "name": "角色权限管理", "taskId": "#4", "completedAt": "2026-04-29T18:56:00" },
+    { "id": "task-07", "name": "用户管理页面", "taskId": "#6", "completedAt": "2026-04-29T19:02:00" },
+    { "id": "task-08", "name": "专家注册接口", "taskId": "#5", "completedAt": "2026-04-29T19:00:00" },
+    { "id": "task-09", "name": "专家注册页面", "taskId": "#9", "completedAt": "2026-04-29T19:05:00" },
+    { "id": "task-10", "name": "专家初审功能", "taskId": "#8", "completedAt": "2026-04-29T19:02:00" },
+    { "id": "task-11", "name": "专家复审/OA审批", "taskId": "#16", "completedAt": "2026-04-29T19:10:00" },
+    { "id": "task-12", "name": "专家主数据管理", "taskId": "#20", "completedAt": "2026-04-29T19:54:00" },
+    { "id": "task-13", "name": "专家主数据页面", "taskId": "#13", "completedAt": "2026-04-29T19:47:00" },
+    { "id": "task-14", "name": "专家画像功能", "taskId": "#15", "completedAt": "2026-04-29T19:47:00" },
+    { "id": "task-15", "name": "采购方案单功能", "taskId": "#21", "completedAt": "2026-04-29T19:12:00" },
+    { "id": "task-16", "name": "抽取方案配置", "taskId": "#18", "completedAt": "2026-04-29T19:42:00" },
+    { "id": "task-17", "name": "专家抽取执行", "taskId": "#22", "completedAt": "2026-04-29T20:09:00" },
+    { "id": "task-18", "name": "专家确认流程", "taskId": "#19", "completedAt": "2026-04-29T20:18:00" },
+    { "id": "task-19", "name": "抽取方案配置页面", "taskId": "#14", "completedAt": "2026-04-29T20:18:00" },
+    { "id": "task-20", "name": "专家确认页面", "taskId": "#17", "completedAt": "2026-04-29T20:18:00" },
+    { "id": "task-21", "name": "评标委员会功能", "taskId": "#23", "completedAt": "2026-04-29T20:13:00" },
+    { "id": "task-22", "name": "专家评分功能", "taskId": "#27", "completedAt": "2026-04-29T20:16:00" },
+    { "id": "task-23", "name": "评标委员会页面", "taskId": "#30", "completedAt": "2026-04-29T20:16:00" },
+    { "id": "task-24", "name": "专家评分页面", "taskId": "#31", "completedAt": "2026-04-29T20:16:00" },
+    { "id": "task-25", "name": "消息模板管理", "taskId": "#26", "completedAt": "2026-04-29T19:42:00" },
+    { "id": "task-26", "name": "企业微信通知集成", "taskId": "#24", "completedAt": "2026-04-29T19:39:00" },
+    { "id": "task-27", "name": "短信邮件通知", "taskId": "#29", "completedAt": "2026-04-29T19:50:00" },
+    { "id": "task-28", "name": "专家补抽功能", "taskId": "#28", "completedAt": "2026-04-29T20:18:00" },
+    { "id": "task-29", "name": "数据字典管理", "taskId": "#25", "completedAt": "2026-04-29T19:39:00" },
+    { "id": "task-30", "name": "系统集成测试", "taskId": "#32", "completedAt": "2026-04-29T20:19:00" }
+  ],
+  "pendingTasks": [],
+  "testData": {
+    "adminAccount": {
+      "username": "admin",
+      "password": "Admin@123",
+      "token": "Valid JWT token generated"
+    },
+    "testUserAccount": {
+      "username": "testuser",
+      "password": "Test@123",
+      "userId": 4
+    },
+    "expertZhangsan": {
+      "expertId": 1,
+      "expertNo": "EXP-2026-0001",
+      "name": "Zhangsan",
+      "phone": "13900139001",
+      "email": "zhangsan@test.com",
+      "status": "NORMAL",
+      "reviewStatus": "RE_PASS",
+      "accountUsername": "13900139001",
+      "accountPassword": "c6ab545c",
+      "expertType": "TECH",
+      "expertLevel": "SENIOR"
+    },
+    "expertLisi": {
+      "expertId": 2,
+      "name": "Lisi",
+      "phone": "13900139002",
+      "status": "POTENTIAL",
+      "reviewStatus": "INIT_REJECT"
+    },
+    "procurementPlan": {
+      "planId": 1,
+      "planNo": "PLAN-2026-0001",
+      "planName": "Test Procurement 001",
+      "projectName": "IT Project",
+      "planStatus": "PENDING"
+    },
+    "extractionScheme": {
+      "schemeId": 1,
+      "schemeName": "Test Scheme 001",
+      "extractionCount": 5
+    },
+    "bidCommittee": {
+      "committeeId": 1,
+      "status": "FORMING",
+      "memberCount": 1
+    },
+    "evaluation": {
+      "evaluationId": 1,
+      "score": 95.5,
+      "comment": "Excellent work"
+    },
+    "testRole": {
+      "roleId": 6,
+      "roleCode": "TEST_ROLE",
+      "roleName": "Test Role"
+    },
+    "messageTemplates": [
+      "EXTRACT_NOTIFY_SMS",
+      "EXTRACT_NOTIFY_EMAIL",
+      "REVIEW_PASS_NOTIFY",
+      "REVIEW_REJECT_NOTIFY",
+      "CONFIRM_SUCCESS_NOTIFY",
+      "BID_REMINDER",
+      "TEST_WECHAT"
+    ],
+    "dictCodes": [
+      "EXPERT_TYPE",
+      "EXPERT_LEVEL",
+      "EXPERT_STATUS",
+      "REVIEW_STATUS",
+      "CONFIRM_STATUS"
+    ]
+  },
+  "servers": {
+    "backend": "http://localhost:8080",
+    "frontend": "http://localhost:5173",
+    "mysql": "localhost:3306/expert_db"
+  },
+  "apiEndpoints": {
+    "auth": "/api/auth/login",
+    "user": "/api/user/list",
+    "role": "/api/role/list",
+    "expert": "/api/expert/list",
+    "expertPortrait": "/api/expert/{id}/portrait",
+    "expertReview": "/api/review/list",
+    "plan": "/api/plan/list",
+    "dict": "/api/dict/list",
+    "extractionScheme": "/api/extraction/scheme/list",
+    "extractionExecute": "/api/extraction/scheme/execute",
+    "bidCommittee": "/api/bid/committee",
+    "evaluation": "/api/bid/committee/evaluation",
+    "messageTemplate": "/api/message/template/list",
+    "smsSend": "/api/message/sms/send",
+    "emailSend": "/api/message/email/send"
+  },
+  "testResults": {
+    "integrationTest": "ALL PASSED",
+    "apiCount": 12,
+    "passedCount": 12
+  }
+}

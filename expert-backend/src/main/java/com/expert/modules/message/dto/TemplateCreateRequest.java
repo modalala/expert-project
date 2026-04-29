@@ -1,0 +1,12 @@
+package com.expert.modules.message.dto;
+
+import lombok.Data;
+
+@Data
+public class TemplateCreateRequest {
+    private String templateCode;
+    private String templateName;
+    private String templateType;
+    private String templateContent;
+    private String variables;
+}
