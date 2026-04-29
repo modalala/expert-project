@@ -13,41 +13,62 @@
 | 操作系统 | Ubuntu 24.04 LTS 64bit | Docker支持最佳 |
 | 网络 | 公网IP | 需开放80/443端口 |
 
-### 1.2 Ubuntu系统初始化
-
-```bash
-# 1. 更新系统
-apt update && apt upgrade -y
-
-# 2. 安装常用工具
-apt install -y wget curl vim net-tools git
-
-# 3. 配置防火墙（使用ufw）
-apt install -y ufw
-ufw allow 22/tcp   # SSH
-ufw allow 80/tcp   # HTTP
-ufw allow 443/tcp  # HTTPS
-ufw enable
-
-# 4. 设置时区
-timedatectl set-timezone Asia/Shanghai
-```
-
-### 1.3 安全组配置
+### 1.2 安全组配置
 
 腾讯云安全组需开放以下端口：
 - **22**: SSH
 - **80**: HTTP
-- **443**: HTTPS
+- **443**: HTTPS（可选）
 
 ---
 
-## 二、安装Docker环境
+## 二、服务器初始化
 
-### 2.1 安装Docker
+### 2.1 连接服务器
 
 ```bash
-# 安装Docker官方GPG密钥
+ssh root@<服务器公网IP>
+```
+
+### 2.2 系统更新与工具安装
+
+```bash
+# 更新系统
+apt update && apt upgrade -y
+
+# 安装常用工具
+apt install -y wget curl vim git
+```
+
+### 2.3 配置防火墙
+
+```bash
+# 安装ufw
+apt install -y ufw
+
+# 开放端口
+ufw allow 22/tcp   # SSH
+ufw allow 80/tcp   # HTTP
+ufw allow 443/tcp  # HTTPS（可选）
+
+# 启用防火墙
+ufw enable
+```
+
+### 2.4 设置时区
+
+```bash
+timedatectl set-timezone Asia/Shanghai
+```
+
+---
+
+## 三、安装Docker
+
+### 3.1 安装Docker
+
+```bash
+# 添加Docker官方GPG密钥
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 
 # 添加Docker官方源
@@ -61,12 +82,12 @@ apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker
 systemctl start docker
 systemctl enable docker
 
-# 验证
+# 验证安装
 docker --version
 docker compose version
 ```
 
-### 2.2 配置Docker镜像加速（国内服务器推荐）
+### 3.2 配置镜像加速（国内服务器推荐）
 
 ```bash
 mkdir -p /etc/docker
@@ -83,168 +104,183 @@ cat > /etc/docker/daemon.json << 'EOF'
 }
 EOF
 
+# 重启Docker使配置生效
 systemctl daemon-reload
 systemctl restart docker
 ```
 
 ---
 
-## 三、项目Docker配置说明
+## 四、克隆项目
 
-项目已包含完整的Docker配置文件，可直接使用：
+```bash
+# 克隆代码到 /root 目录
+cd /root
+git clone https://github.com/modalala/expert-project.git
+cd expert-project
+```
+
+---
+
+## 五、项目Docker配置说明
+
+### 5.1 服务架构
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Docker Network                            │
+│                  (expert-network)                            │
+│                                                              │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │   MySQL     │  │   Backend   │  │   Frontend  │         │
+│  │   :3306     │←─│   :8080     │←─│   :80       │         │
+│  │  (内网)     │  │  (内网)     │  │  (公网)     │         │
+│  └─────────────┘  └─────────────┘  └─────────────┘         │
+│       ↓                ↓                    ↓               │
+│  mysql_data卷     多阶段构建          Nginx反向代理         │
+│  数据持久化      Docker内编译         → backend:8080       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 5.2 配置文件清单
 
 | 文件 | 路径 | 说明 |
 |------|------|------|
 | docker-compose.yml | 项目根目录 | 服务编排（MySQL + Backend + Frontend） |
-| 后端Dockerfile | `expert-backend/Dockerfile` | Spring Boot镜像 |
-| 前端Dockerfile | `expert-frontend/Dockerfile` | Vue3 + Nginx镜像 |
-| Nginx配置 | `expert-frontend/nginx.conf` | 反向代理配置 |
-| MySQL初始化脚本 | `mysql/init/*.sql` | 数据库表结构和初始数据 |
+| 后端Dockerfile | `expert-backend/Dockerfile` | **多阶段构建**，Docker内编译 |
+| 前端Dockerfile | `expert-frontend/Dockerfile` | **多阶段构建**，Docker内编译 |
+| Nginx配置 | `expert-frontend/nginx.conf` | Vue路由 + API反向代理 |
+| MySQL初始化 | `mysql/init/01-*.sql` | 表结构（先执行） |
+| MySQL初始化 | `mysql/init/02-*.sql` | 初始数据（后执行） |
 | 环境变量示例 | `.env.example` | 密码和密钥配置 |
 
-### 3.0 Docker Compose服务架构
+### 5.3 MySQL初始化脚本执行顺序
 
+**重要**：Docker MySQL容器按**字母顺序**执行 `/docker-entrypoint-initdb.d/` 目录下的SQL文件。
+
+项目已正确命名：
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      Docker Network                          │
-│                    (expert-network)                          │
-│                                                              │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │   MySQL     │  │   Backend   │  │   Frontend  │         │
-│  │   :3306     │←→│   :8080     │←→│   :80       │         │
-│  │  (内网)     │  │  (内网)     │  │  (公网)     │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
-│       ↓                                     ↓               │
-│  mysql_data卷                          Nginx反向代理         │
-│  数据持久化                            → backend:8080       │
-└─────────────────────────────────────────────────────────────┘
+mysql/init/
+  ├── 01-init_schema.sql  ← 先执行（创建表结构）
+  └── 02-init_data.sql    ← 后执行（插入初始数据）
 ```
 
-三个容器服务：
-- **mysql**: MySQL 8.0 数据库，自动初始化表结构和数据
-- **backend**: Spring Boot 后端服务，连接MySQL
-- **frontend**: Vue3 + Nginx 前端服务，对外暴露80端口
-
-### 3.1 后端Dockerfile
-
-当前配置需要先本地构建jar包：
-
-```bash
-cd expert-backend
-mvn clean package -DskipTests
-```
-
-如需改为多阶段构建（在Docker内编译），将 `expert-backend/Dockerfile` 改为：
+### 5.4 后端Dockerfile（多阶段构建）
 
 ```dockerfile
-# 构建阶段
+# ==================== 构建阶段 ====================
 FROM eclipse-temurin:17-jdk-alpine AS builder
 
-WORKDIR /app
+WORKDIR /build
 
+# 安装Maven
 RUN apk add --no-cache maven
 
+# 先复制pom.xml，利用Docker缓存层
 COPY pom.xml .
+
+# 下载依赖（pom.xml不变时跳过，加速构建）
+RUN mvn dependency:go-offline -B
+
+# 复制源代码
 COPY src ./src
 
-RUN mvn clean package -DskipTests
+# 构建jar包
+RUN mvn clean package -DskipTests -B
 
-# 运行阶段
+# ==================== 运行阶段 ====================
 FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
-COPY --from=builder /app/target/expert-backend-1.0.0.jar app.jar
+# 复制构建产物
+COPY --from=builder /build/target/expert-backend-1.0.0.jar app.jar
+
+# 复制生产配置
 COPY src/main/resources/application-prod.yml application-prod.yml
 
+# 创建日志目录
 RUN mkdir -p /app/logs
 
 EXPOSE 8080
 
 ENV JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC"
 
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/api/test/db-conn || exit 1
+
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar --spring.profiles.active=prod"]
 ```
 
-### 3.2 前端Dockerfile（已为多阶段构建）
-
-当前配置已最优，无需修改：
-- 构建阶段：Node 20 Alpine
-- 运行阶段：Nginx Alpine
-
-### 3.3 Nginx配置
-
-`expert-frontend/nginx.conf` 已包含：
-- Vue Router history 模式
-- 后端 API 代理到 `backend:8080`
-- Gzip 压缩
-- 静态资源缓存
+**优势**：
+- 无需本地预先编译jar包
+- Git clone后直接构建即可
+- 利用Docker缓存层加速依赖下载
 
 ---
 
-## 四、部署流程
-
-### 4.1 上传项目到服务器
-
-**方式一：Git克隆（推荐）**
+## 六、配置环境变量
 
 ```bash
-ssh root@<服务器IP>
-cd /opt
-git clone <项目Git地址> expert
-cd expert
-```
+cd /root/expert-project
 
-**方式二：SCP上传**
-
-```bash
-scp -r docker-compose.yml expert-backend expert-frontend mysql .env.example root@<服务器IP>:/opt/expert/
-```
-
-### 4.2 配置环境变量
-
-```bash
-cd /opt/expert
+# 复制环境变量示例文件
 cp .env.example .env
+
+# 编辑配置（生产环境必须修改密码和JWT密钥）
 vim .env
 ```
 
-修改密码和JWT密钥：
+`.env` 文件内容：
+
 ```bash
-MYSQL_ROOT_PASSWORD=YourStrongRootPassword@123
-MYSQL_PASSWORD=YourStrongAppPassword@123
-JWT_SECRET=your-production-secret-key-change-this-in-production
+# MySQL配置
+MYSQL_ROOT_PASSWORD=Root@123456      # 生产环境请修改
+MYSQL_PASSWORD=Expert@123            # 生产环境请修改
+
+# JWT配置（必须修改为复杂密钥）
+JWT_SECRET=your-production-secret-key-at-least-256-bits-long-for-hs256-algorithm-security
 ```
 
-### 4.3 构建并启动
+---
+
+## 七、构建并启动
+
+### 7.1 构建镜像
 
 ```bash
-# 构建所有镜像
+# 构建所有镜像（首次构建约5-10分钟）
 docker compose build
+```
 
+### 7.2 启动服务
+
+```bash
 # 启动所有服务
 docker compose up -d
-
-# 查看服务状态
-docker compose ps
-
-# 查看日志
-docker compose logs -f
 ```
 
-### 4.4 验证部署
+### 7.3 查看服务状态
 
 ```bash
-# 检查容器状态
-docker ps
+# 查看容器状态
+docker compose ps
 
-# 测试API
-curl http://localhost/api/test/db-conn
+# 应看到三个容器都是 Up 状态
+# NAME            STATUS
+# expert-mysql    Up (healthy)
+# expert-backend  Up (healthy)
+# expert-frontend Up
+```
 
-# 测试前端
-curl http://localhost/
+### 7.4 查看日志
 
-# 查看各服务日志
+```bash
+# 查看所有服务日志
+docker compose logs -f
+
+# 查看单个服务日志
 docker compose logs mysql
 docker compose logs backend
 docker compose logs frontend
@@ -252,9 +288,39 @@ docker compose logs frontend
 
 ---
 
-## 五、运维操作
+## 八、验证部署
 
-### 5.1 常用命令
+### 8.1 检查API
+
+```bash
+# 测试数据库连接
+curl http://localhost/api/test/db-conn
+
+# 返回成功：{"success":true,"message":"数据库连接成功"}
+```
+
+### 8.2 检查前端
+
+浏览器访问：`http://<服务器公网IP>/`
+
+应看到登录页面。
+
+### 8.3 测试登录
+
+```bash
+# 使用初始管理员账户登录
+curl -X POST http://localhost/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
+
+# 返回token表示成功
+```
+
+---
+
+## 九、运维操作
+
+### 9.1 常用命令
 
 ```bash
 # 查看运行状态
@@ -263,13 +329,16 @@ docker compose ps
 # 查看日志
 docker compose logs -f [service_name]
 
-# 重启服务
-docker compose restart [service_name]
+# 重启单个服务
+docker compose restart backend
+
+# 重启所有服务
+docker compose restart
 
 # 停止所有服务
 docker compose down
 
-# 停止并删除数据卷（慎用）
+# 停止并删除数据卷（慎用！会丢失数据）
 docker compose down -v
 
 # 进入容器
@@ -277,10 +346,15 @@ docker exec -it expert-backend sh
 docker exec -it expert-mysql mysql -u root -p
 ```
 
-### 5.2 更新部署
+### 9.2 更新部署
 
 ```bash
+cd /root/expert-project
+
+# 拉取最新代码
 git pull
+
+# 重新构建并启动
 docker compose build
 docker compose up -d
 
@@ -288,17 +362,17 @@ docker compose up -d
 docker compose up -d --build
 ```
 
-### 5.3 数据备份
+### 9.3 数据备份
 
 ```bash
 # 备份MySQL数据
-docker exec expert-mysql mysqldump -u root -p${MYSQL_ROOT_PASSWORD} expert_db > backup_$(date +%Y%m%d).sql
+docker exec expert-mysql mysqldump -u root -pRoot@123456 expert_db > backup_$(date +%Y%m%d).sql
 
 # 恢复数据
-docker exec -i expert-mysql mysql -u root -p${MYSQL_ROOT_PASSWORD} expert_db < backup.sql
+docker exec -i expert-mysql mysql -u root -pRoot@123456 expert_db < backup_20240430.sql
 ```
 
-### 5.4 查看资源占用
+### 9.4 查看资源占用
 
 ```bash
 docker stats
@@ -307,29 +381,39 @@ docker images
 
 ---
 
-## 六、HTTPS配置
+## 十、HTTPS配置（可选）
 
-### 6.1 SSL证书
+### 10.1 申请SSL证书
 
-将证书放入 `ssl/` 目录：
+腾讯云提供免费SSL证书：
+1. 登录腾讯云控制台 → SSL证书管理
+2. 申请免费证书，填写域名信息
+3. 下载Nginx格式证书
 
+### 10.2 上传证书
+
+```bash
+# 在项目目录创建ssl目录
+mkdir -p /root/expert-project/ssl
+
+# 上传证书文件
+# ssl/your-domain.com.crt
+# ssl/your-domain.com.key
 ```
-ssl/
-  ├── your-domain.com.crt
-  └── your-domain.com.key
-```
 
-### 6.2 修改Nginx配置
+### 10.3 修改Nginx配置
 
-更新 `expert-frontend/nginx.conf`：
+编辑 `expert-frontend/nginx.conf`：
 
 ```nginx
+# HTTP重定向到HTTPS
 server {
     listen 80;
     server_name your-domain.com;
     return 301 https://$server_name$request_uri;
 }
 
+# HTTPS配置
 server {
     listen 443 ssl;
     server_name your-domain.com;
@@ -357,9 +441,9 @@ server {
 }
 ```
 
-### 6.3 挂载SSL证书
+### 10.4 修改docker-compose.yml
 
-修改 `docker-compose.yml`，在 frontend 服务添加：
+在 frontend 服务添加卷挂载：
 
 ```yaml
 frontend:
@@ -367,73 +451,122 @@ frontend:
     - ./ssl:/etc/nginx/ssl:ro
 ```
 
----
-
-## 七、部署检查清单
-
-| 检查项 | 命令 |
-|--------|------|
-| Docker服务 | `systemctl status docker` |
-| 容器状态 | `docker compose ps` |
-| 后端健康 | `curl http://localhost/api/test/db-conn` |
-| 前端访问 | `curl http://localhost/` |
-| 数据库连接 | `docker exec expert-mysql mysql -u expert -p` |
-| 日志查看 | `docker compose logs -f` |
-
----
-
-## 八、常见问题
-
-### 8.1 容器启动失败
+### 10.5 重新部署
 
 ```bash
-docker compose logs backend
-docker events
-docker images
+docker compose up -d --build
 ```
 
-### 8.2 MySQL连接失败
+---
+
+## 十一、部署检查清单
+
+| 步骤 | 命令 | 预期结果 |
+|------|------|----------|
+| Docker安装 | `docker --version` | 显示版本号 |
+| 项目克隆 | `git clone ...` | 目录存在 |
+| 环境配置 | `cat .env` | 显示配置 |
+| 镜像构建 | `docker compose build` | 构建成功 |
+| 服务启动 | `docker compose ps` | 3个容器Up |
+| API测试 | `curl localhost/api/test/db-conn` | {"success":true} |
+| 前端测试 | 浏览器访问IP | 登录页面 |
+
+---
+
+## 十二、常见问题
+
+### 12.1 Docker安装失败
 
 ```bash
-# 等待MySQL完全启动
+# 检查源是否正确
+cat /etc/apt/sources.list.d/docker.list
+
+# 重新添加源
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list
+apt update && apt install -y docker-ce docker-compose-plugin
+```
+
+### 12.2 MySQL容器启动失败
+
+```bash
+# 查看日志
+docker compose logs mysql
+
+# 常见原因：数据卷权限问题
+# 解决：删除旧数据卷重新启动
+docker compose down -v
+docker compose up -d
+```
+
+### 12.3 后端无法连接MySQL
+
+```bash
+# 等待MySQL完全启动（约30秒）
 docker compose logs mysql | grep "ready for connections"
 
-# 测试连接
-docker exec -it expert-mysql mysql -u expert -p
+# 检查网络
+docker network inspect expert-network
+
+# 重启后端
+docker compose restart backend
 ```
 
-### 8.3 端口冲突
+### 12.4 前端访问502错误
 
 ```bash
+# 检查后端是否运行
+docker compose ps backend
+
+# 检查后端日志
+docker compose logs backend
+
+# 后端启动较慢（约60秒），等待健康检查通过
+```
+
+### 12.5 镜像构建失败
+
+```bash
+# 清理并重新构建
+docker compose down
+docker system prune -f
+docker compose build --no-cache
+docker compose up -d
+```
+
+### 12.6 端口冲突
+
+```bash
+# 检查端口占用
 netstat -tlnp | grep -E '80|8080|3306'
 
 # 修改docker-compose.yml端口映射
-# 如改为 "8081:80"
-```
-
-### 8.4 镜像构建失败
-
-```bash
-docker compose build --no-cache --progress=plain
-docker compose down
-docker system prune -f
-docker compose build
-```
-
-### 8.5 数据卷问题
-
-```bash
-docker volume ls
-docker volume inspect expert_mysql_data
+# 如：改为 "8081:80"
 ```
 
 ---
 
-## 九、一键部署脚本
-
-项目已有 `scripts/deploy.sh`，使用方法：
+## 十三、快速部署命令汇总
 
 ```bash
-chmod +x scripts/deploy.sh
-./scripts/deploy.sh
+# === 一键部署 ===
+
+# 1. 安装Docker
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list && \
+apt update && apt install -y docker-ce docker-compose-plugin && \
+systemctl start docker && systemctl enable docker
+
+# 2. 克隆项目
+cd /root && git clone https://github.com/modalala/expert-project.git && cd expert-project
+
+# 3. 配置环境变量
+cp .env.example .env
+
+# 4. 构建并启动
+docker compose build && docker compose up -d
+
+# 5. 验证
+docker compose ps
+curl http://localhost/api/test/db-conn
 ```
