@@ -9,6 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@earendil-works/pi-agent-core": "file:../../pi/packages/agent",
+    "@earendil-works/pi-ai": "file:../../pi/packages/ai",
+    "@earendil-works/pi-web-ui": "file:../../pi/packages/web-ui",
     "@vueuse/core": "^14.2.1",
     "axios": "^1.15.2",
     "echarts": "^6.0.0",

@@ -78,6 +78,12 @@ const routes: RouteRecordRaw[] = [
         name: 'BidCommittee',
         component: () => import('@/views/bid/committee/index.vue'),
         meta: { title: '评标委员会' }
+      },
+      {
+        path: 'agent/chat',
+        name: 'AgentChat',
+        component: () => import('@/views/agent/chat/index.vue'),
+        meta: { title: 'Agent对话' }
       }
     ]
   },

@@ -77,6 +77,17 @@
             <span>评标委员会</span>
           </el-menu-item>
         </el-sub-menu>
+
+        <el-sub-menu index="agent">
+          <template #title>
+            <el-icon><Cpu /></el-icon>
+            <span>智能助手</span>
+          </template>
+          <el-menu-item index="/agent/chat">
+            <el-icon><ChatLineRound /></el-icon>
+            <span>Agent对话</span>
+          </el-menu-item>
+        </el-sub-menu>
       </el-menu>
     </el-aside>
 
@@ -117,7 +128,7 @@ import { useRouter } from 'vue-router'
 import {
   HomeFilled, Setting, User, UserFilled, Avatar, EditPen,
   Document, List, Sort, Tickets, Finished, Star, Grid,
-  Expand, Fold
+  Expand, Fold, Cpu, ChatLineRound
 } from '@element-plus/icons-vue'
 
 const appStore = useAppStore()
