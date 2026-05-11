@@ -9,13 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@earendil-works/pi-agent-core": "file:../../pi/packages/agent",
-    "@earendil-works/pi-ai": "file:../../pi/packages/ai",
-    "@earendil-works/pi-web-ui": "file:../../pi/packages/web-ui",
+    "@earendil-works/pi-agent-core": "^0.74.0",
+    "@earendil-works/pi-ai": "^0.74.0",
     "@vueuse/core": "^14.2.1",
     "axios": "^1.15.2",
     "echarts": "^6.0.0",
     "element-plus": "^2.13.7",
+    "marked": "^18.0.3",
     "pinia": "^3.0.4",
     "sass": "^1.99.0",
     "vue": "^3.5.32",

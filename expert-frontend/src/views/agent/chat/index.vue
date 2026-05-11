@@ -41,7 +41,8 @@
                     <span></span><span></span><span></span>
                   </span>
                 </span>
-                <span v-else>{{ msg.content }}</span>
+                <!-- Markdown 渲染 -->
+                <div v-else class="markdown-content" v-html="renderMarkdown(msg.content)"></div>
               </div>
               <div v-else class="user-text">{{ msg.content }}</div>
             </div>
@@ -67,14 +68,14 @@
           :rows="2"
           :placeholder="isLoading ? '请等待回复...' : '输入您的消息...'"
           :disabled="isLoading"
-          @keydown.enter.ctrl="sendMessage"
+          @keydown.enter.ctrl="handleSend"
           class="message-input"
         />
         <div class="input-actions">
           <el-button
             type="primary"
             :disabled="!inputMessage.trim() || isLoading"
-            @click="sendMessage"
+            @click="handleSend"
             class="send-btn"
           >
             <el-icon><Promotion /></el-icon>
@@ -83,7 +84,7 @@
           <el-button
             v-if="isLoading"
             type="danger"
-            @click="abortMessage"
+            @click="handleAbort"
             class="stop-btn"
           >
             <el-icon><VideoPause /></el-icon>
@@ -99,196 +100,166 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { Cpu, Promotion, VideoPause } from '@element-plus/icons-vue'
+import { useAppStore } from '@/stores/app'
+import { useAgentChat } from '@/composables/useAgentChat'
 import { Agent } from '@earendil-works/pi-agent-core'
 import { getModel } from '@earendil-works/pi-ai'
-import { useAppStore } from '@/stores/app'
+import { marked } from 'marked'
+import type { DynamicContext } from '@/utils/agent'
 
-// DeepSeek API Key
-const DEEPSEEK_API_KEY = 'sk-a8b10cc7ee804798b1e40c5060d9fe6e'
+// 配置 marked 选项
+marked.setOptions({
+  breaks: true, // 支持 GitHub 风格的换行
+  gfm: true // 支持 GitHub 风格的 markdown
+})
 
-interface ChatMessage {
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: number
-  isStreaming?: boolean
+// Markdown 渲染函数
+const renderMarkdown = (content: string) => {
+  return marked.parse(content) as string
 }
 
 const appStore = useAppStore()
 const messagesRef = ref<HTMLDivElement>()
 const inputMessage = ref('')
-const messages = ref<ChatMessage[]>([])
-const isLoading = ref(false)
-const streamingContent = ref('')
-const abortController = ref<AbortController | null>(null)
 
-let agent: Agent | null = null
-let unsubscribe: (() => void) | null = null
+// ========== UI 辅助函数 ==========
+
+// 滚动到底部（需要先定义，以便传递给 useAgentChat）
+const scrollToBottom = async () => {
+  await nextTick()
+  if (messagesRef.value) {
+    messagesRef.value.scrollTop = messagesRef.value.scrollHeight
+  }
+}
+
+// Agent 核心逻辑（不直接依赖 Agent 包）
+const {
+  messages,
+  isLoading,
+  streamingContent,
+  promptBuilder,
+  initPromptBuilder,
+  setAgent,
+  sendMessage,
+  abortMessage,
+  destroy
+} = useAgentChat({
+  userInfo: appStore.userInfo ? {
+    name: appStore.userInfo.realName || appStore.userInfo.username,
+    role: appStore.userInfo.role || '普通用户'
+  } : undefined,
+  onMessageUpdate: scrollToBottom
+})
 
 // 用户名首字母
 const userInitial = computed(() => {
   return appStore.userInfo?.realName?.charAt(0) || 'U'
 })
 
-// 初始化 Agent
+// 格式化时间
+const formatTime = (timestamp: number) => {
+  return new Date(timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+}
+
+// ========== Agent 初始化（在组件层面处理） ==========
+
+const API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY || 'sk-503bccf39b6d4e4d9e00a19bc7eea56b'
+const MODEL = 'deepseek-v4-flash'  // 正确的模型名称
+const PROVIDER = 'deepseek'
+
+let unsubscribe: (() => void) | null = null
+
 onMounted(async () => {
   try {
-    agent = new Agent({
+    // 1. 初始化 Prompt 构建器
+    const builder = initPromptBuilder()
+    console.log('[Init] PromptBuilder initialized')
+
+    // 2. 构建动态上下文
+    const context: DynamicContext = {
+      date: new Date().toISOString().split('T')[0],
+      model: MODEL,
+      user: appStore.userInfo ? {
+        name: appStore.userInfo.realName || appStore.userInfo.username,
+        role: appStore.userInfo.role || '普通用户'
+      } : undefined
+    }
+
+    // 3. 构建 System Prompt
+    const { full } = builder.build(context)
+    console.log('[Init] System Prompt length:', full.length)
+
+    // 4. 获取模型配置
+    const model = getModel(PROVIDER, MODEL)
+    if (!model) {
+      throw new Error(`Model "${MODEL}" not found for provider "${PROVIDER}"`)
+    }
+    console.log('[Init] Model config:', model)
+
+    // 5. 创建 Agent
+    const agent = new Agent({
       initialState: {
-        systemPrompt: '你是一个专业的专家库管理助手，可以帮助用户查询专家信息、分析评标数据等。请用简洁、专业的中文回答问题。',
-        model: getModel('deepseek', 'deepseek-v4-flash'),
-        thinkingLevel: 'off',
+        systemPrompt: full,
+        model: model,
+        thinkingLevel: 'high',  // deepseek-v4-flash 支持的 level
         messages: [],
         tools: []
       },
       getApiKey: async (provider: string) => {
-        if (provider === 'deepseek') {
-          return DEEPSEEK_API_KEY
+        console.log('[Init] getApiKey called for:', provider)
+        if (provider === PROVIDER) {
+          return API_KEY
         }
         return undefined
       }
     })
+    console.log('[Init] Agent created')
 
-    // 订阅 Agent 事件
-    unsubscribe = agent.subscribe((event) => {
-      handleAgentEvent(event)
-    })
+    // 6. 设置 Agent 到 composable
+    setAgent(agent)
+    console.log('[Init] Agent set to composable - Ready!')
+
   } catch (error: any) {
-    ElMessage.error('初始化助手失败: ' + error.message)
+    console.error('[Init Error]', error)
   }
 })
 
 onUnmounted(() => {
-  if (unsubscribe) {
-    unsubscribe()
-  }
-  if (abortController.value) {
-    abortController.value.abort()
-  }
+  destroy()
 })
 
-// 处理 Agent 事件
-const handleAgentEvent = (event: any) => {
-  switch (event.type) {
-    case 'agent_start':
-      isLoading.value = true
-      streamingContent.value = ''
-      break
-
-    case 'message_start':
-      if (event.message?.role === 'assistant') {
-        // 开始助手消息
-        messages.value.push({
-          role: 'assistant',
-          content: '',
-          timestamp: Date.now(),
-          isStreaming: true
-        })
-        scrollToBottom()
-      }
-      break
-
-    case 'message_update':
-      // 流式更新内容
-      if (event.assistantMessageEvent?.type === 'text_delta') {
-        streamingContent.value += event.assistantMessageEvent.delta || ''
-        // 更新最后一条消息的内容
-        const lastMsg = messages.value[messages.value.length - 1]
-        if (lastMsg && lastMsg.role === 'assistant') {
-          lastMsg.content = streamingContent.value
-          scrollToBottom()
-        }
-      }
-      break
-
-    case 'message_end':
-      // 消息完成
-      const lastMsg = messages.value[messages.value.length - 1]
-      if (lastMsg && lastMsg.role === 'assistant') {
-        lastMsg.content = streamingContent.value
-        lastMsg.isStreaming = false
-      }
-      streamingContent.value = ''
-      break
-
-    case 'agent_end':
-      isLoading.value = false
-      scrollToBottom()
-      break
-
-    case 'turn_end':
-      // Turn 结束
-      break
-  }
-}
+// ========== 用户交互 ==========
 
 // 发送消息
-const sendMessage = async () => {
+const handleSend = async () => {
   const content = inputMessage.value.trim()
-  if (!content || isLoading.value || !agent) return
+  if (!content) return
 
-  // 添加用户消息
-  messages.value.push({
-    role: 'user',
-    content,
-    timestamp: Date.now()
-  })
+  console.log('[Send] Message:', content)
+  console.log('[Send] Agent exists:', !!promptBuilder.value)
 
   inputMessage.value = ''
-  streamingContent.value = ''
-
-  // 创建 AbortController
-  abortController.value = new AbortController()
+  scrollToBottom()
 
   try {
-    await agent.prompt(content)
+    await sendMessage(content)
+    console.log('[Send] Message sent successfully')
   } catch (error: any) {
-    if (error.name !== 'AbortError') {
-      ElMessage.error('发送失败: ' + error.message)
-      isLoading.value = false
-    }
+    console.error('[Send Error]', error)
   }
 }
 
 // 快捷发送
 const sendQuickMessage = (text: string) => {
   inputMessage.value = text
-  sendMessage()
+  handleSend()
 }
 
 // 停止生成
-const abortMessage = () => {
-  if (abortController.value) {
-    abortController.value.abort()
-    abortController.value = null
-  }
-  isLoading.value = false
-  streamingContent.value = ''
-
-  // 更新最后一条消息状态
-  const lastMsg = messages.value[messages.value.length - 1]
-  if (lastMsg && lastMsg.role === 'assistant' && lastMsg.isStreaming) {
-    lastMsg.isStreaming = false
-    if (!lastMsg.content) {
-      lastMsg.content = '已停止生成'
-    }
-  }
-}
-
-// 格式化时间
-const formatTime = (timestamp: number) => {
-  const date = new Date(timestamp)
-  return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-}
-
-// 滚动到底部
-const scrollToBottom = async () => {
-  await nextTick()
-  if (messagesRef.value) {
-    messagesRef.value.scrollTop = messagesRef.value.scrollHeight
-  }
+const handleAbort = () => {
+  abortMessage()
 }
 </script>
 
@@ -429,6 +400,130 @@ const scrollToBottom = async () => {
 
               &:nth-child(2) { animation-delay: 0.2s; }
               &:nth-child(3) { animation-delay: 0.4s; }
+            }
+          }
+        }
+
+        // Markdown 内容样式
+        .markdown-content {
+          // 标题样式
+          h1, h2, h3, h4, h5, h6 {
+            margin: 16px 0 8px 0;
+            font-weight: 600;
+            color: #303133;
+          }
+
+          h1 { font-size: 20px; }
+          h2 { font-size: 18px; border-bottom: 1px solid #e4e7ed; padding-bottom: 4px; }
+          h3 { font-size: 16px; }
+          h4 { font-size: 14px; }
+
+          // 段落
+          p {
+            margin: 8px 0;
+            line-height: 1.8;
+          }
+
+          // 表格样式
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+
+            th, td {
+              border: 1px solid #dcdfe6;
+              padding: 8px 12px;
+              text-align: left;
+            }
+
+            th {
+              background: #f5f7fa;
+              font-weight: 600;
+              color: #303133;
+            }
+
+            tr:nth-child(even) td {
+              background: #fafafa;
+            }
+          }
+
+          // 代码块样式
+          pre {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 12px 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 12px 0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+
+            code {
+              background: transparent;
+              padding: 0;
+              color: inherit;
+            }
+          }
+
+          // 行内代码
+          code {
+            background: #f5f7fa;
+            color: #e96900;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+          }
+
+          // 列表样式
+          ul, ol {
+            margin: 8px 0;
+            padding-left: 20px;
+
+            li {
+              margin: 4px 0;
+              line-height: 1.8;
+            }
+          }
+
+          // 引用样式
+          blockquote {
+            border-left: 4px solid #409eff;
+            margin: 12px 0;
+            padding: 8px 16px;
+            background: #f0f7ff;
+            color: #606266;
+
+            p {
+              margin: 0;
+            }
+          }
+
+          // 分割线
+          hr {
+            border: none;
+            border-top: 1px solid #e4e7ed;
+            margin: 16px 0;
+          }
+
+          // 强调
+          strong {
+            font-weight: 600;
+            color: #303133;
+          }
+
+          em {
+            color: #606266;
+          }
+
+          // 链接
+          a {
+            color: #409eff;
+            text-decoration: none;
+
+            &:hover {
+              text-decoration: underline;
             }
           }
         }

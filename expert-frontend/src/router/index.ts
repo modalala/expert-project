@@ -103,7 +103,13 @@ const router = createRouter({
 router.beforeEach((to, _from, next) => {
   document.title = `${to.meta.title || '首页'} - 专家库管理系统`
   const token = localStorage.getItem('token')
-  if (to.path !== '/login' && !token) {
+
+  // 允许直接访问的页面
+  const publicPages = ['/login', '/agent/chat']
+
+  if (publicPages.includes(to.path)) {
+    next()
+  } else if (!token) {
     next('/login')
   } else {
     next()
